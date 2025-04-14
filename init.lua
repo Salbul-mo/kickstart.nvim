@@ -229,27 +229,42 @@ vim.keymap.set('v', '<leader>y', '"+y', { desc = 'Copy to Clipboard' })
 
 vim.keymap.set('n', '<leader>pv', vim.cmd.Ex)
 
+-- :m '>+1 (Move selected lines down 1 line), <CR> (PressEnter to Execute), gv (Reselect the previous visual selection), =gv (Re-indent the selection)
 vim.keymap.set('v', 'J', ':m ">+1<CR>gv=gv')
+-- :m '<-2 (Move selected lines up 2 lines), <CR> (PressEnter to Execute), gv (Reselect the previous visual selection), =gv(Re-indent the selection)
 vim.keymap.set('v', 'K', ':m "<-2<CR>gv=gv')
 
 vim.keymap.set('n', 'J', 'mzJ`z')
+
+-- Centered
 vim.keymap.set('n', '<C-d>', '<C-d>zz')
 vim.keymap.set('n', '<C-u>', '<C-u>zz')
 vim.keymap.set('n', 'n', 'nzzzv')
 vim.keymap.set('n', 'N', 'Nzzzv')
+
+-- Formatting
 vim.keymap.set('n', '=ap', 'ma=ap"a')
+
+-- Restart LSP
 vim.keymap.set('n', '<leader>zig', '<cmd>LspRestart<cr>')
 
+-- "-d (Delete selection into the black hole register [doesn't overwrite other registers]), P (Paste the previously yanked text)
 vim.keymap.set('x', '<leader>p', [["_dP]])
 
+-- Yank to system clipboard
 vim.keymap.set({ 'n', 'v' }, '<leader>y', [["+y]])
+
+-- Yank line to system clipboard
 vim.keymap.set('n', '<leader>Y', [["+Y]])
 
+-- Delete without register
 vim.keymap.set({ 'n', 'v' }, '<leader>d', '"_d')
 
 vim.keymap.set('i', '<C-c>', '<Esc>')
 
 vim.keymap.set('n', 'Q', '<nop>')
+
+-- Open tmux-sessionizer
 vim.keymap.set('n', '<C-f>', '<cmd>silent !tmux neww tmux-sessionizer<CR>')
 
 vim.keymap.set('n', '<C-k>', '<cmd>cnext<CR>zz')
@@ -257,7 +272,11 @@ vim.keymap.set('n', '<C-j>', '<cmd>cprev<CR>zz')
 vim.keymap.set('n', '<leader>k', '<cmd>lnext<CR>zz')
 vim.keymap.set('n', '<leader>j', '<cmd>lprev<CR>zz')
 
+-- Search and replace word under cursor
+-- :%s/ (Start a global search/replace command), \<<C-r><C-w>\> (Insert the word under cursor with word boundaries), \<C-r><C-w>\ (Replace with the same word modified by user), gI (Global and case-sensitive replace), <Left><Left><Left> (Move cursor left to edit the replacement)
 vim.keymap.set('n', '<leader>s', [[:%s/\<<C-r><C-w>\>/<C-r><C-w>/gI<Left><Left><Left>]])
+
+-- Mark current file executable (chmod +x)
 vim.keymap.set('n', '<leader>x', '<cmd>!chmod +x %<CR>', { silent = true })
 
 -- Exit terminal mode in the builtin terminal with a shortcut that is a bit easier
@@ -284,11 +303,11 @@ vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower win
 vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
 
 -- NOTE: Some terminals have coliding keymaps or are not able to send distinct keycodes
--- vim.keymap.set("n", "<C-S-h>", "<C-w>H", { desc = "Move window to the left" })
--- vim.keymap.set("n", "<C-S-l>", "<C-w>L", { desc = "Move window to the right" })
--- vim.keymap.set("n", "<C-S-j>", "<C-w>J", { desc = "Move window to the lower" })
--- vim.keymap.set("n", "<C-S-k>", "<C-w>K", { desc = "Move window to the upper" })
-
+-- vim.keymap.set('n', '<C-S-h>', '<C-w>H', { desc = 'Move window to the left' })
+-- vim.keymap.set('n', '<C-S-l>', '<C-w>L', { desc = 'Move window to the right' })
+-- vim.keymap.set('n', '<C-S-j>', '<C-w>J', { desc = 'Move window to the lower' })
+-- vim.keymap.set('n', '<C-S-k>', '<C-w>K', { desc = 'Move window to the upper' })
+--
 -- [[ Basic Autocommands ]]
 --  See `:help lua-guide-autocommands`
 
@@ -675,6 +694,21 @@ bind-key -T copy-mode-vi 'C-\' select-pane -l
           -- NOTE: Remember that Lua is a real programming language, and as such it is possible
           -- to define small helper and utility functions so you don't have to repeat yourself.
           --
+          local opts = { buffer = event.buf, desc = 'LSP: ' }
+
+          vim.keymap.set('n', '<leader>vd', function()
+            vim.diagnostic.open_float()
+          end, opts)
+          vim.keymap.set('n', '[d', function()
+            vim.diagnostic.goto_next()
+          end, opts)
+          vim.keymap.set('n', ']d', function()
+            vim.diagnostic.goto_prev()
+          end, opts)
+          vim.keymap.set('i', '<C-h>', function()
+            vim.lsp.buf.signature_help()
+          end, opts)
+
           -- In this case, we create a function that lets us more easily define mappings specific
           -- for LSP related items. It sets the mode, buffer and description for us each time.
           local map = function(keys, func, desc, mode)
@@ -685,39 +719,50 @@ bind-key -T copy-mode-vi 'C-\' select-pane -l
           -- Jump to the definition of the word under your cursor.
           --  This is where a variable was first declared, or where a function is defined, etc.
           --  To jump back, press <C-t>.
-          map('gd', require('telescope.builtin').lsp_definitions, '[G]oto [D]efinition')
+          map('gd', require('telescope.builtin').lsp_definitions, '[G]oto [D]efinition, Jump back is <C-t>')
+
+          -- Hover information, press twice then move to information window
+          map('K', function()
+            vim.lsp.buf.hover()
+          end, 'Display information')
 
           -- Find references for the word under your cursor.
-          map('gr', require('telescope.builtin').lsp_references, '[G]oto [R]eferences')
+          map('vrr', require('telescope.builtin').lsp_references, '[R]eferences')
 
           -- Jump to the implementation of the word under your cursor.
           --  Useful when your language has ways of declaring types without an actual implementation.
-          map('gI', require('telescope.builtin').lsp_implementations, '[G]oto [I]mplementation')
+          -- map('gI', require('telescope.builtin').lsp_implementations, '[G]oto [I]mplementation')
 
           -- Jump to the type of the word under your cursor.
           --  Useful when you're not sure what type a variable is and you want to see
           --  the definition of its *type*, not where it was *defined*.
-          map('<leader>D', require('telescope.builtin').lsp_type_definitions, 'Type [D]efinition')
+          -- map('<leader>gt', require('telescope.builtin').lsp_type_definitions, '[T]ype Definition')
 
           -- Fuzzy find all the symbols in your current document.
           --  Symbols are things like variables, functions, types, etc.
-          map('<leader>ds', require('telescope.builtin').lsp_document_symbols, '[D]ocument [S]ymbols')
+          -- map('<leader>gf', require('telescope.builtin').lsp_document_symbols, '[F]ind Symbols')
 
           -- Fuzzy find all the symbols in your current workspace.
           --  Similar to document symbols, except searches over your entire project.
-          map('<leader>ws', require('telescope.builtin').lsp_dynamic_workspace_symbols, '[W]orkspace [S]ymbols')
+          map('<leader>vws', require('telescope.builtin').lsp_dynamic_workspace_symbols, '[W]orkspace [S]ymbols')
 
           -- Rename the variable under your cursor.
           --  Most Language Servers support renaming across files, etc.
-          map('<leader>rn', vim.lsp.buf.rename, '[R]e[n]ame')
+          map('<leader>vrn', function()
+            vim.lsp.buf.rename()
+          end, '[R]e[n]ame')
 
           -- Execute a code action, usually your cursor needs to be on top of an error
           -- or a suggestion from your LSP for this to activate.
-          map('<leader>ca', vim.lsp.buf.code_action, '[C]ode [A]ction', { 'n', 'x' })
+          map('<leader>vca', function()
+            vim.lsp.buf.code_action()
+          end, '[C]ode [A]ction', { 'n', 'x' })
 
           -- WARN: This is not Goto Definition, this is Goto Declaration.
           --  For example, in C this would take you to the header.
-          map('gD', vim.lsp.buf.declaration, '[G]oto [D]eclaration')
+          map('gD', function()
+            vim.lsp.buf.declaration()
+          end, '[G]oto [D]eclaration')
 
           -- This function resolves a difference between neovim nightly (version 0.11) and stable (version 0.10)
           ---@param client vim.lsp.Client
@@ -823,13 +868,14 @@ bind-key -T copy-mode-vi 'C-\' select-pane -l
         gopls = {},
         pyright = {},
         rust_analyzer = {},
+        tailwindcss = {},
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
         --
         -- Some languages (like typescript) have entire language plugins that can be useful:
         --    https://github.com/pmizio/typescript-tools.nvim
         --
         -- But for many setups, the LSP (`ts_ls`) will work just fine
-        ts_ls = {},
+        -- ts_ls = {},
         --
 
         lua_ls = {
@@ -942,6 +988,7 @@ bind-key -T copy-mode-vi 'C-\' select-pane -l
           return 'make install_jsregexp'
         end)(),
         dependencies = {
+          'rafamadriz/friendly-snippets',
           -- `friendly-snippets` contains a variety of premade snippets.
           --    See the README about individual language/framework/plugin snippets:
           --    https://github.com/rafamadriz/friendly-snippets
@@ -952,6 +999,22 @@ bind-key -T copy-mode-vi 'C-\' select-pane -l
           --   end,
           -- },
         },
+        config = function()
+          local ls = require 'luasnip'
+          ls.filetype_extend('javascript', { 'jsdoc' })
+
+          vim.keymap.set({ 'i' }, '<C-s>e', function()
+            ls.expand()
+          end, { silent = true })
+          vim.keymap.set({ 'i', 's' }, '<C-s>;', function()
+            ls.jump(1)
+          end, { silent = true })
+          vim.keymap.set({ 'i', 's' }, '<C-E>', function()
+            if ls.choice_active() then
+              ls.change_choice(1)
+            end
+          end, { silent = true })
+        end,
       },
       'saadparwaiz1/cmp_luasnip',
 
@@ -1042,6 +1105,183 @@ bind-key -T copy-mode-vi 'C-\' select-pane -l
       }
     end,
   },
+  {
+    'pmizio/typescript-tools.nvim',
+    dependencies = { 'nvim-lua/plenary.nvim', 'neovim/nvim-lspconfig' },
+    opts = {},
+  },
+  {
+    'folke/trouble.nvim',
+    config = function()
+      require('trouble').setup {
+        icons = false,
+      }
+
+      vim.keymap.set('n', '<leader>tt', function()
+        require('trouble').toggle()
+      end)
+
+      vim.keymap.set('n', '[t', function()
+        require('trouble').next { skip_groups = true, jump = true }
+      end)
+
+      vim.keymap.set('n', ']t', function()
+        require('trouble').previous { skip_groups = true, jump = true }
+      end)
+    end,
+  },
+  {
+    'zbirenbaum/copilot.lua',
+    cmd = 'Copilot',
+    event = 'InsertEnter',
+    config = function()
+      require('copilot').setup {
+        suggestion = {
+          enabled = true,
+          auto_trigger = false,
+          hide_during_completion = false,
+          debounce = 25,
+          keymap = {
+            accept = false,
+            accept_word = false,
+            accept_line = '<Tab>',
+            next = false,
+            prev = false,
+            dismiss = false,
+          },
+        },
+      }
+    end,
+  },
+  {
+    'tpope/vim-fugitive',
+    config = function()
+      vim.keymap.set('n', '<leader>gs', vim.cmd.Git)
+
+      local ThePrimeagen_Fugitive = vim.api.nvim_create_augroup('ThePrimeagen_Fugitive', {})
+
+      local autocmd = vim.api.nvim_create_autocmd
+      autocmd('BufWinEnter', {
+        group = ThePrimeagen_Fugitive,
+        pattern = '*',
+        callback = function()
+          if vim.bo.ft ~= 'fugitive' then
+            return
+          end
+
+          local bufnr = vim.api.nvim_get_current_buf()
+          local opts = { buffer = bufnr, remap = false }
+          vim.keymap.set('n', '<leader>p', function()
+            vim.cmd.Git 'push'
+          end, opts)
+
+          -- rebase always
+          vim.keymap.set('n', '<leader>P', function()
+            vim.cmd.Git { 'pull', '--rebase' }
+          end, opts)
+
+          -- NOTE: It allows me to easily set the branch i am pushing and any tracking
+          -- needed if i did not set the branch up correctly
+          vim.keymap.set('n', '<leader>t', ':Git push -u origin ', opts)
+        end,
+      })
+
+      vim.keymap.set('n', 'gu', '<cmd>diffget //2<CR>')
+      vim.keymap.set('n', 'gh', '<cmd>diffget //3<CR>')
+    end,
+  },
+  {
+    'ThePrimeagen/harpoon',
+    branch = 'harpoon2',
+    dependencies = { 'nvim-lua/plenary.nvim' },
+    config = function()
+      local harpoon = require 'harpoon'
+
+      harpoon:setup()
+
+      vim.keymap.set('n', '<leader>A', function()
+        harpoon:list():prepend()
+      end, { desc = 'Append to Harpoon' })
+      vim.keymap.set('n', '<leader>a', function()
+        harpoon:list():add()
+      end, { desc = 'Add to Harpoon' })
+      vim.keymap.set('n', '<C-e>', function()
+        harpoon.ui:toggle_quick_menu(harpoon:list())
+      end, { desc = 'Toggle Harpoon' })
+
+      vim.keymap.set('n', '<C-1>', function()
+        harpoon:list():select(1)
+      end, { desc = 'Select Harpoon 1' })
+      vim.keymap.set('n', '<C-2>', function()
+        harpoon:list():select(2)
+      end, { desc = 'Select Harpoon 2' })
+      vim.keymap.set('n', '<C-3>', function()
+        harpoon:list():select(3)
+      end, { desc = 'Select Harpoon 3' })
+      vim.keymap.set('n', '<C-4>', function()
+        harpoon:list():select(4)
+      end, { desc = 'Select Harpoon 4' })
+      vim.keymap.set('n', '<leader><C-1>', function()
+        harpoon:list():replace_at(1)
+      end, { desc = 'Replace at Harpoon 1' })
+      vim.keymap.set('n', '<leader><C-2>', function()
+        harpoon:list():replace_at(2)
+      end, { desc = 'Replace at Harpoon 2' })
+      vim.keymap.set('n', '<leader><C-3>', function()
+        harpoon:list():replace_at(3)
+      end, { desc = 'Replace at Harpoon 3' })
+      vim.keymap.set('n', '<leader><C-4>', function()
+        harpoon:list():replace_at(4)
+      end, { desc = 'Replace at Harpoon 4' })
+    end,
+  },
+  {
+    'theprimeagen/vim-be-good',
+
+    dependencies = {
+      'nvim-lua/plenary.nvim',
+    },
+
+    config = function() end,
+  },
+  {
+    'mbbill/undotree',
+
+    config = function()
+      vim.keymap.set('n', '<leader>u', vim.cmd.UndotreeToggle)
+    end,
+  },
+  {
+    'folke/zen-mode.nvim',
+    config = function()
+      vim.keymap.set('n', '<leader>zz', function()
+        require('zen-mode').setup {
+          window = {
+            width = 90,
+            options = {},
+          },
+        }
+        require('zen-mode').toggle()
+        vim.wo.wrap = false
+        vim.wo.number = true
+        vim.wo.rnu = true
+      end)
+
+      vim.keymap.set('n', '<leader>zZ', function()
+        require('zen-mode').setup {
+          window = {
+            width = 80,
+            options = {},
+          },
+        }
+        require('zen-mode').toggle()
+        vim.wo.wrap = false
+        vim.wo.number = false
+        vim.wo.rnu = false
+        vim.opt.colorcolumn = '0'
+      end)
+    end,
+  },
 
   { -- You can easily change to a different colorscheme.
     -- Change the name of the colorscheme plugin below, and then
@@ -1053,8 +1293,11 @@ bind-key -T copy-mode-vi 'C-\' select-pane -l
     config = function()
       ---@diagnostic disable-next-line: missing-fields
       require('tokyonight').setup {
+        transparent = true,
         styles = {
           comments = { italic = false }, -- Disable italics in comments
+          sidebars = { transparent = true },
+          float = { transparent = true },
         },
       }
 
@@ -1071,24 +1314,24 @@ bind-key -T copy-mode-vi 'C-\' select-pane -l
   { -- Collection of various small independent plugins/modules
     'echasnovski/mini.nvim',
     config = function()
-      -- Better Around/Inside textobjects
+      --     -- Better Around/Inside textobjects
+      --     --
+      --     -- Examples:
+      --     --  - va)  - [V]isually select [A]round [)]paren
+      --     --  - yinq - [Y]ank [I]nside [N]ext [Q]uote
+      --     --  - ci'  - [C]hange [I]nside [']quote
+      --     require('mini.ai').setup { n_lines = 500 }
       --
-      -- Examples:
-      --  - va)  - [V]isually select [A]round [)]paren
-      --  - yinq - [Y]ank [I]nside [N]ext [Q]uote
-      --  - ci'  - [C]hange [I]nside [']quote
-      require('mini.ai').setup { n_lines = 500 }
-
-      -- Add/delete/replace surroundings (brackets, quotes, etc.)
+      --     -- Add/delete/replace surroundings (brackets, quotes, etc.)
+      --     --
+      --     -- - saiw) - [S]urround [A]dd [I]nner [W]ord [)]Paren
+      --     -- - sd'   - [S]urround [D]elete [']quotes
+      --     -- - sr)'  - [S]urround [R]eplace [)] [']
+      --     require('mini.surround').setup()
       --
-      -- - saiw) - [S]urround [A]dd [I]nner [W]ord [)]Paren
-      -- - sd'   - [S]urround [D]elete [']quotes
-      -- - sr)'  - [S]urround [R]eplace [)] [']
-      require('mini.surround').setup()
-
-      -- Simple and easy statusline.
-      --  You could remove this setup call if you don't like it,
-      --  and try some other statusline plugin
+      --     -- Simple and easy statusline.
+      --     --  You could remove this setup call if you don't like it,
+      --     --  and try some other statusline plugin
       local statusline = require 'mini.statusline'
       -- set use_icons to true if you have a Nerd Font
       statusline.setup { use_icons = vim.g.have_nerd_font }
@@ -1101,8 +1344,8 @@ bind-key -T copy-mode-vi 'C-\' select-pane -l
         return '%2l:%-2v'
       end
 
-      -- ... and there is more!
-      --  Check out: https://github.com/echasnovski/mini.nvim
+      --     -- ... and there is more!
+      --     --  Check out: https://github.com/echasnovski/mini.nvim
     end,
   },
   { -- Highlight, edit, and navigate code
@@ -1111,7 +1354,7 @@ bind-key -T copy-mode-vi 'C-\' select-pane -l
     main = 'nvim-treesitter.configs', -- Sets main module to use for opts
     -- [[ Configure Treesitter ]] See `:help nvim-treesitter`
     opts = {
-      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' },
+      ensure_installed = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc', 'typescript', 'javascript' },
       -- Autoinstall languages that are not installed
       auto_install = true,
       highlight = {
