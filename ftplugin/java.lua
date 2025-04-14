@@ -69,7 +69,7 @@ function M.setup_jdtls()
     vim.keymap.set('n', '<C-k>', vim.lsp.buf.signature_help, opts)
     vim.keymap.set('n', '<leader>D', vim.lsp.buf.type_definition, opts)
     vim.keymap.set('n', '<leader>rn', vim.lsp.buf.rename, opts)
-    vim.keymap.set('n', '<leader>ca', vim.lsp.buf.code_action.opts)
+    vim.keymap.set('n', '<leader>ca', vim.lsp.buf.code_action, opts)
     vim.keymap.set('n', '<leader>f', function()
       vim.lsp.buf.format { async = true }
     end, opts)
@@ -77,14 +77,14 @@ function M.setup_jdtls()
     vim.keymap.set('n', '<leader>oi', jdtls.organize_imports, opts)
     vim.keymap.set('n', '<leader>ev', jdtls.extract_variable, opts)
     vim.keymap.set('v', '<leader>ev', function()
-      jdtls.extract_variable(true)
+      jdtls.extract_variable { true }
     end, opts)
     vim.keymap.set('n', '<leader>ec', jdtls.extract_constant, opts)
     vim.keymap.set('v', '<leader>ec', function()
-      jdtls.extract_constant(true)
+      jdtls.extract_constant { true }
     end, opts)
     vim.keymap.set('v', '<leader>em', function()
-      jdtls.extract_method(true)
+      jdtls.extract_method { true }
     end, opts)
 
     vim.keymap.set('n', '<leader>tc', jdtls.test_class, opts)
@@ -117,151 +117,151 @@ function M.setup_jdtls()
     -- local java_home = os.getenv 'JAVA_HOME'
     -- local java_cmd = java_home and (java_home .. '/bin/java') or 'java'
 
-    local config =
-      {
-        cmd = {
-          'java',
-          '-Declipse.application=org.eclipse.jdt.ls.core.id1',
-          '-Dosgi.bundles.defaultStartLevel=4',
-          '-Declipse.product=org.eclipse.jdt.ls.core.product',
-          '-Dlog.level=ALL',
-          '-Xmx1g',
-          '--add-modules=ALL-SYSTEM',
-          '--add-opens',
-          'java.base/java.util=ALL-UNNAMED',
-          '--add-opens',
-          'java.base/java.lang=ALL-UNNAMED',
-          '-jar',
-          vim.fn.glob(jdtls_path .. '/plugins/org.eclipse.equinox.launcher_*.jar'),
-          '-configuration',
-          jdtls_path .. '/' .. os_config,
-          '-data',
-          workspace_dir,
+    local config = {
+      cmd = {
+        'java',
+        '-Declipse.application=org.eclipse.jdt.ls.core.id1',
+        '-Dosgi.bundles.defaultStartLevel=4',
+        '-Declipse.product=org.eclipse.jdt.ls.core.product',
+        '-Dlog.level=ALL',
+        '-Xmx1g',
+        '--add-modules=ALL-SYSTEM',
+        '--add-opens',
+        'java.base/java.util=ALL-UNNAMED',
+        '--add-opens',
+        'java.base/java.lang=ALL-UNNAMED',
+        '-jar',
+        vim.fn.glob(jdtls_path .. '/plugins/org.eclipse.equinox.launcher_*.jar'),
+        '-configuration',
+        jdtls_path .. '/' .. os_config,
+        '-data',
+        workspace_dir,
+      },
+
+      root_dir = root_dir,
+
+      init_options = {
+        bundles = bundles,
+        extendedClientCapabilities = {
+          progressReportProvider = true,
+          classFileContentsSupport = true,
+          resolveAdditionalTextEditsSupport = true,
+          advancedExtractRefactoringSupport = true,
+          advancedOrganizeImportsSupport = true,
+          generateConstrunctorsPromptSupport = true,
+          generateDelegateMethodPromptSupport = true,
+          moveRefactoringSupport = true,
+          overrideMehodsPromptSupport = true,
+          hashCodeEqualsPromptSupport = true,
+          advancedGenerateAccessorsSupport = true,
         },
+      },
 
-        root_dir = root_dir,
-
-        init_options = {
-          bundles = bundles,
-          extendedClientCapabilities = {
-            progressReportProvider = true,
-            classFileContentsSupport = true,
-            resolveAdditionalTextEditsSupport = true,
-            advancedExtractRefactoringSupport = true,
-            advancedOrganizeImportsSupport = true,
-            generateConstrunctorsPromptSupport = true,
-            generateDelegateMethodPromptSupport = true,
-            moveRefactoringSupport = true,
-            overrideMehodsPromptSupport = true,
-            hashCodeEqualsPromptSupport = true,
-            advancedGenerateAccessorsSupport = true,
+      -- Default Setting
+      settings = {
+        java = {
+          signatureHelp = { enabled = true },
+          contentProvider = { preferred = 'fernflower' },
+          importOrder = {
+            'java',
+            'javax',
+            'com',
+            'org',
           },
-        },
+          sources = {
+            organizeImports = {
+              starThreshold = 9999,
+              staticStarThreshold = 9999,
+            },
+          },
+          codeGeneration = {
+            toString = {
+              template = '${object.className}{${member.name()}=${member.value}, ${otherMembers}}',
+            },
+            hashCodeEquals = {
+              useJava7Objects = true,
+            },
+            useBlocks = true,
+          },
 
-        -- Default Setting
-        settings = {
-          java = {
-            signatureHelp = { enabled = true },
-            contentProvider = { preferred = 'fernflower' },
-            importOrder = {
-              'java',
-              'javax',
-              'com',
-              'org',
+          configuration = {
+            updateBuildConfiguration = 'interactive',
+          },
+          maven = {
+            downloadSources = true,
+          },
+          implementationsCodeLens = {
+            enabled = true,
+          },
+          referencesCodeLens = {
+            enabled = true,
+          },
+          references = {
+            includeDecompiledSources = true,
+          },
+          inlayHints = {
+            parameterNames = {
+              enabled = 'all',
             },
-            sources = {
-              organizeImports = {
-                starThreshold = 9999,
-                staticStarThreshold = 9999,
-              },
-            },
-            codeGeneration = {
-              toString = {
-                template = '${object.className}{${member.name()}=${member.value}, ${otherMembers}}',
-              },
-              hashCodeEquals = {
-                useJava7Objects = true,
-              },
-              useBlocks = true,
-            },
-
-            configuration = {
-              updateBuildConfiguration = 'interactive',
-            },
-            maven = {
-              downloadSources = true,
-            },
-            implementationsCodeLens = {
+            format = {
               enabled = true,
-            },
-            referencesCodeLens = {
-              enabled = true,
-            },
-            references = {
-              includeDecompiledSources = true,
-            },
-            inlayHints = {
-              parameterNames = {
-                enabled = 'all',
-              },
-              format = {
-                enabled = true,
-                settings = {
-                  url = jdtls_path .. '/formatter.xml',
-                  profile = 'GoogleStyle',
-                },
-              },
-              completion = {
-                favoriteStaticMembers = {
-                  'org.junit.Assert.*',
-                  'org.junit.Assume.*',
-                  'org.junit.jupiter.api.Assertions.*',
-                  'org.junit.jupiter.api.Assumptions.*',
-                  'org.junit.jupiter.api.DynamicContainer.*',
-                  'org.junit.jupiter.api.DynamicTest.*',
-                  'org.mockito.Mockito.*',
-                  'org.mockito.ArgumentMatchers.*',
-                },
-                filteredTypes = {
-                  'com.sun.*',
-                  'io.micrometer.shaded.*',
-                  'java.awt.*',
-                  'jdk.*',
-                  'sun.*',
-                },
+              settings = {
+                url = jdtls_path .. '/formatter.xml',
+                profile = 'GoogleStyle',
               },
             },
-          },
-
-          -- LSP Initialize options
-          --   init_options = {
-          --     bundles = {
-          --       --     vim.fn.glob('~/.local/share/nvim/java-debug/com.microsoft.java.debug.plugin/target/com.microsoft.java.debug.plugin-*.jar', true),
-          --       --     vim.fn.glob('~/.local/share/nvim/vscode-java-test/server/*.jar', true),
-          --     },
-          --   },
-          -- }
-          --
-          -- local bundles = {
-          --   vim.fn.glob('~/.local/share/nvim/java-debug/com.microsoft.java.debug.plugin/target/com.microsoft.java.debug.plugin-*.jar', true),
-          -- }
-          --
-          -- local vscode_java_test = vim.fn.glob('~/.local/share/nvim/vscode-java-test/server/*.jar', true)
-          -- if vscode_java_test ~= '' then
-          --   vim.list_extend(bundles, vim.split(vscode_java_test, '\n'))
-          -- end
-          --
-          -- config.init_options = {
-          --   bundles = bundles,
-          -- }
-          --
-          capabilities = capabilities,
-          on_attach = on_attach,
-          flags = {
-            allow_incremental_sync = true,
+            completion = {
+              favoriteStaticMembers = {
+                'org.junit.Assert.*',
+                'org.junit.Assume.*',
+                'org.junit.jupiter.api.Assertions.*',
+                'org.junit.jupiter.api.Assumptions.*',
+                'org.junit.jupiter.api.DynamicContainer.*',
+                'org.junit.jupiter.api.DynamicTest.*',
+                'org.mockito.Mockito.*',
+                'org.mockito.ArgumentMatchers.*',
+              },
+              filteredTypes = {
+                'com.sun.*',
+                'io.micrometer.shaded.*',
+                'java.awt.*',
+                'jdk.*',
+                'sun.*',
+              },
+            },
           },
         },
-      }, jdtls.start_or_attach(config)
+
+        -- LSP Initialize options
+        --   init_options = {
+        --     bundles = {
+        --       --     vim.fn.glob('~/.local/share/nvim/java-debug/com.microsoft.java.debug.plugin/target/com.microsoft.java.debug.plugin-*.jar', true),
+        --       --     vim.fn.glob('~/.local/share/nvim/vscode-java-test/server/*.jar', true),
+        --     },
+        --   },
+        -- }
+        --
+        -- local bundles = {
+        --   vim.fn.glob('~/.local/share/nvim/java-debug/com.microsoft.java.debug.plugin/target/com.microsoft.java.debug.plugin-*.jar', true),
+        -- }
+        --
+        -- local vscode_java_test = vim.fn.glob('~/.local/share/nvim/vscode-java-test/server/*.jar', true)
+        -- if vscode_java_test ~= '' then
+        --   vim.list_extend(bundles, vim.split(vscode_java_test, '\n'))
+        -- end
+        --
+        -- config.init_options = {
+        --   bundles = bundles,
+        -- }
+        --
+        capabilities = capabilities,
+        on_attach = on_attach,
+        flags = {
+          allow_incremental_sync = true,
+        },
+      },
+    }
+    jdtls.start_or_attach(config)
   end
   -- Start nvim-jdtls
   -- require('jdtls').start_or_attach(config)
